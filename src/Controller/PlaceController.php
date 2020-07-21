@@ -3,7 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Place;
+use App\Entity\Price;
 use App\Form\PlaceType;
+use App\Form\PriceType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -127,7 +129,7 @@ class PlaceController extends AbstractController
     /**
      * @param Request $request
      * @return JsonResponse
-     * @Route("/users/{id}", name="user_patch", methods={"PATCH"})
+     * @Route("/users/{id}", name="place_patch", methods={"PATCH"})
      */
     public function patchPlaceAction(Request $request): JsonResponse
     {
@@ -149,5 +151,57 @@ class PlaceController extends AbstractController
         } else {
             return new JsonResponse($form);
         }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/places/{id}/prices", name="place_prices", methods={"GET"})
+     */
+    public function getPricesAction(Request $request): JsonResponse
+    {
+        $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+        if (empty($place)) {
+            return new JsonResponse(['message' => 'Place not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        return new JsonResponse($place->getPrices());
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/places/{id}/prices", name="place_prices_create", methods={"POST"})
+     */
+    public function postPricesAction(Request $request): JsonResponse
+    {
+        $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+        if (empty($place)) {
+            return $this->placeNotFound();
+        }
+
+        $price = new Price();
+        $price->setPlace($place);
+
+        $form = $this->createForm(PriceType::class, $price);
+        $form->submit($request->request->all());
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($price);
+            $em->flush();
+
+            return new JsonResponse($price);
+        } else {
+            return new JsonResponse($form);
+        }
+
+    }
+
+    protected function placeNotFound(): JsonResponse
+    {
+        return new JsonResponse(['message' => 'Place not found'], Response::HTTP_NOT_FOUND);
     }
 }
