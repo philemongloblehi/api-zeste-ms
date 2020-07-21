@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Form\UserType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -33,7 +34,12 @@ class UserController extends AbstractController
        return new JsonResponse($formatted);
    }
 
-   public function getUserAction(Request $request)
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/users/{id}", name="user_show", methods={"GET"})
+     */
+   public function getUserAction(Request $request): JsonResponse
    {
         $user = $this->getDoctrine()->getRepository(User::class)->find($request->get('user_id'));
 
@@ -49,6 +55,47 @@ class UserController extends AbstractController
         ];
 
         return new JsonResponse($formatted);
+   }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/users", name="user_create", methods={"POST"})
+     */
+   public function postUsersAction(Request $request): JsonResponse
+   {
+        $user = new User();
+        $form = $this->createForm(UserType::class, $user);
+
+        $form->submit($request->request->all());
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->persist($user);
+            $em->flush();
+
+            return new JsonResponse($user);
+        } else {
+            return new JsonResponse($form);
+        }
+   }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("users", name="user_delete", methods={"DELETE"})
+     */
+   public function removeUserAction(Request $request): JsonResponse
+   {
+       $em = $this->getDoctrine()->getManager();
+       $user = $em->getRepository(User::class)->find($request->get('id'));
+
+       if ($user) {
+           $em->remove($user);
+           $em->flush();
+       }
+
+       return new JsonResponse('', 204);
    }
 
 }
