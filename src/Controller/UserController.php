@@ -98,4 +98,38 @@ class UserController extends AbstractController
        return new JsonResponse('', 204);
    }
 
+   public function patchUserAction(Request $request): JsonResponse
+   {
+        return $this->updateUserAction($request, false);
+   }
+
+    /**
+     * @param Request $request
+     * @param bool $clearMissing
+     * @return JsonResponse
+     * @Route("/users/{id}", name="user_update", methods={"PUT"})
+     */
+   public function updateUserAction(Request $request, bool $clearMissing): JsonResponse
+   {
+       $user = $this->getDoctrine()->getRepository(User::class)->find($request->get('id'));
+
+       if (empty($user)) {
+           return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+       }
+
+       $form = $this->createForm(UserType::class, $user);
+
+       $form->submit($request->request->all(), $clearMissing);
+
+       if ($form->isValid()) {
+           $em = $this->getDoctrine()->getManager();
+           $em->merge($user);
+           $em->flush();
+
+           return new JsonResponse($user);
+       } else {
+           return new JsonResponse($form);
+       }
+   }
+
 }

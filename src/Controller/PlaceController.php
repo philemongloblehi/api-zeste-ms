@@ -94,4 +94,60 @@ class PlaceController extends AbstractController
 
         return new JsonResponse('', 204);
     }
+
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/places", name="place_update", methods={"PUT"})
+     */
+    public function updatePlaceAction(Request $request): JsonResponse
+    {
+        $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+        if (empty($place)) {
+            return new JsonResponse(['message' => 'Place not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $form = $this->createForm(PlaceType::class, $place);
+
+        $form->submit($request->request->all());
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->merge($place);
+            $em->flush();
+
+            return new JsonResponse($place);
+        } else {
+            return new JsonResponse($form);
+        }
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/users/{id}", name="user_patch", methods={"PATCH"})
+     */
+    public function patchPlaceAction(Request $request): JsonResponse
+    {
+        $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+        if (empty($place)) {
+            return new JsonResponse(['message' => 'Place not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        $form = $this->createForm(PlaceType::class, $place);
+        $form->submit($request->request->all(), false);
+
+        if ($form->isValid()) {
+            $em = $this->getDoctrine()->getManager();
+            $em->merge($place);
+            $em->flush();
+
+            return new JsonResponse($place);
+        } else {
+            return new JsonResponse($form);
+        }
+    }
 }
