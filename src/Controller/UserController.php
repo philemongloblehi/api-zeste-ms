@@ -132,4 +132,11 @@ class UserController extends AbstractController
        }
    }
 
+
+
+   protected function userNotFound(): JsonResponse
+   {
+       return new JsonResponse(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
+   }
+
 }

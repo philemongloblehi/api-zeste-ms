@@ -4,8 +4,10 @@ namespace App\Controller;
 
 use App\Entity\Place;
 use App\Entity\Price;
+use App\Entity\Theme;
 use App\Form\PlaceType;
 use App\Form\PriceType;
+use App\Form\ThemeType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -199,6 +201,54 @@ class PlaceController extends AbstractController
         }
 
     }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/places/{id}/themes", name="places_get_themes", methods={"GET"})
+     */
+    public function getThemesAction(Request $request): JsonResponse
+    {
+        $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+        if (empty($place)) {
+            return $this->placeNotFound();
+        }
+
+        return new JsonResponse($place->getThemes());
+    }
+
+    /**
+     * @param Request $request
+     * @return JsonResponse
+     * @Route("/places/{id}/theme", name="post_place_theme", methods={"POST"})
+     */
+    public function postThemesAction(Request $request): JsonResponse
+    {
+       $place = $this->getDoctrine()->getRepository(Place::class)->find($request->get('id'));
+
+       if (empty($place)) {
+           return $this->placeNotFound();
+       }
+
+       $theme = new Theme();
+       $theme->setPlace($place);
+
+       $form = $this->createForm(ThemeType::class, $theme);
+       $form->submit($request->request->all());
+
+       if ($form->isValid()) {
+           $em = $this->getDoctrine()->getManager();
+           $em->persist($theme);
+           $em->flush();
+
+           return new JsonResponse($theme);
+       } else {
+           return new JsonResponse($form);
+       }
+    }
+
+
 
     protected function placeNotFound(): JsonResponse
     {
